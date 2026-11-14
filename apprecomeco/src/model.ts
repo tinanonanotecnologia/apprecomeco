@@ -1,51 +1,65 @@
 export const categories = [
   { id: 'bebidas', name: 'Bebidas alcoólicas', icon: 'bebidas' },
-  { id: 'tabaco', name: 'Tabaco e derivados', icon: 'tabaco' },
-  { id: 'cannabis', name: 'Cannabis', icon: 'cannabis' },
-  { id: 'estimulantes', name: 'Estimulantes', icon: 'medicamentos' },
+  { id: 'ilicitas', name: 'Drogas ilícitas', icon: 'cannabis' },
   { id: 'medicamentos', name: 'Medicamentos controlados', icon: 'medicamentos' },
+  { id: 'tabaco', name: 'Tabaco e derivados', icon: 'tabaco' },
+  { id: 'sinteticas', name: 'Substâncias sintéticas', icon: 'sinteticas' },
   { id: 'outras', name: 'Outras substâncias', icon: 'outras' },
+  { id: 'cannabis', name: 'Cannabis', icon: 'cannabis' },
+  { id: 'estimulantes', name: 'Estimulantes', icon: 'cocaina' },
+  { id: 'depressores', name: 'Depressores', icon: 'depressores' },
+  { id: 'alucinogenos', name: 'Alucinógenos', icon: 'alucinogenos' },
+  { id: 'opioides', name: 'Opioides', icon: 'opioides' },
+  { id: 'inalantes', name: 'Inalantes', icon: 'inalantes' },
 ] as const
 
 export type Category = typeof categories[number]['id']
-export type Substance = { id: string; name: string; category: Category; aliases?: string }
+export type Substance = { id: string; name: string; category: Category; aliases?: string; icon?: string }
 export type Track = { substance: Substance; start: string; dailyCost: number }
-export type Entry = { substanceId: string; date: string; used: boolean }
+export type Entry = { substanceId: string; date: string; used: boolean; quantity?: number; unit?: string; observation?: string }
 export type Note = { date: string; mood: string; trigger: string; text: string }
-export type Data = { tracks: Track[]; entries: Entry[]; notes: Note[] }
+export type Data = { tracks: Track[]; entries: Entry[]; notes: Note[]; favorites: string[] }
 
 export const catalog: Substance[] = [
   { id: 'alcool', name: 'Álcool', category: 'bebidas', aliases: 'bebida alcoólica etanol' },
   { id: 'cerveja', name: 'Cerveja', category: 'bebidas', aliases: 'chopp chope' },
-  { id: 'vinho', name: 'Vinho', category: 'bebidas' },
-  { id: 'cachaca', name: 'Cachaça', category: 'bebidas', aliases: 'pinga aguardente' },
-  { id: 'vodca', name: 'Vodca', category: 'bebidas', aliases: 'vodka' },
-  { id: 'uísque', name: 'Uísque', category: 'bebidas', aliases: 'whisky whiskey' },
-  { id: 'gin', name: 'Gin', category: 'bebidas' },
-  { id: 'rum', name: 'Rum', category: 'bebidas' },
-  { id: 'tequila', name: 'Tequila', category: 'bebidas' },
-  { id: 'espumante', name: 'Espumante', category: 'bebidas', aliases: 'champanhe prosecco' },
-  { id: 'licor', name: 'Licor', category: 'bebidas' },
+  { id: 'chopp', name: 'Chopp', category: 'bebidas', aliases: 'chope' },
+  { id: 'vinho', name: 'Vinho', category: 'bebidas', icon: 'vinho-tinto' },
+  { id: 'vinho-tinto', name: 'Vinho tinto', category: 'bebidas', icon: 'vinho-tinto' },
+  { id: 'vinho-branco', name: 'Vinho branco', category: 'bebidas', icon: 'vinho-branco' },
+  { id: 'cachaca', name: 'Cachaça', category: 'bebidas', aliases: 'pinga aguardente', icon: 'cachaca' },
+  { id: 'vodca', name: 'Vodka', category: 'bebidas', aliases: 'vodca', icon: 'vodka' },
+  { id: 'uísque', name: 'Whisky', category: 'bebidas', aliases: 'uísque whiskey', icon: 'whisky' },
+  { id: 'gin', name: 'Gin', category: 'bebidas', icon: 'gin' },
+  { id: 'rum', name: 'Rum', category: 'bebidas', icon: 'rum' },
+  { id: 'tequila', name: 'Tequila', category: 'bebidas', icon: 'tequila' },
+  { id: 'espumante', name: 'Espumante', category: 'bebidas', aliases: 'champanhe prosecco', icon: 'espumante' },
+  { id: 'licor', name: 'Licor', category: 'bebidas', icon: 'licor' },
+  { id: 'drinks', name: 'Drinks', category: 'bebidas', aliases: 'coquetel caipirinha', icon: 'drinks' },
   { id: 'cigarro', name: 'Cigarro', category: 'tabaco', aliases: 'nicotina fumo' },
   { id: 'vape', name: 'Cigarro eletrônico', category: 'tabaco', aliases: 'vape pod nicotina' },
-  { id: 'narguile', name: 'Narguilé', category: 'tabaco', aliases: 'tabaco hookah' },
+  { id: 'narguile', name: 'Narguilé', category: 'tabaco', aliases: 'tabaco hookah', icon: 'narguile' },
   { id: 'charuto', name: 'Charuto', category: 'tabaco' },
   { id: 'maconha', name: 'Maconha', category: 'cannabis', aliases: 'cannabis erva thc' },
   { id: 'haxixe', name: 'Haxixe', category: 'cannabis', aliases: 'cannabis hash' },
-  { id: 'cocaina', name: 'Cocaína', category: 'estimulantes', aliases: 'pó' },
-  { id: 'crack', name: 'Crack', category: 'estimulantes' },
+  { id: 'cocaina', name: 'Cocaína', category: 'estimulantes', aliases: 'pó', icon: 'cocaina' },
+  { id: 'crack', name: 'Crack', category: 'estimulantes', aliases: 'cocaína', icon: 'crack' },
+  { id: 'pasta-base', name: 'Pasta base (Cocaína)', category: 'estimulantes', icon: 'cocaina' },
+  { id: 'merla', name: 'Merla', category: 'estimulantes', aliases: 'cocaína', icon: 'cannabis' },
+  { id: 'cloridrato', name: 'Cloridrato de cocaína', category: 'estimulantes', icon: 'sinteticas' },
   { id: 'anfetamina', name: 'Anfetaminas', category: 'estimulantes', aliases: 'rebite metanfetamina' },
-  { id: 'mdma', name: 'MDMA', category: 'estimulantes', aliases: 'ecstasy êxtase' },
+  { id: 'mdma', name: 'Ecstasy (MDMA)', category: 'sinteticas', aliases: 'êxtase estimulante', icon: 'ecstasy' },
   { id: 'benzodiazepinicos', name: 'Benzodiazepínicos', category: 'medicamentos', aliases: 'clonazepam diazepam alprazolam' },
   { id: 'opioides', name: 'Opioides', category: 'medicamentos', aliases: 'codeína fentanil morfina oxicodona tramadol heroína' },
   { id: 'cetamina', name: 'Cetamina', category: 'medicamentos', aliases: 'ketamina' },
-  { id: 'inalantes', name: 'Inalantes', category: 'outras', aliases: 'solventes lança perfume loló' },
-  { id: 'lsd', name: 'LSD', category: 'outras', aliases: 'ácido alucinógenos' },
-  { id: 'psilocibina', name: 'Psilocibina', category: 'outras', aliases: 'cogumelos alucinógenos' },
+  { id: 'inalantes', name: 'Inalantes', category: 'inalantes', aliases: 'solventes' },
+  { id: 'lanca', name: 'Lança-perfume', category: 'inalantes', aliases: 'loló lança perfume', icon: 'cocaina' },
+  { id: 'lsd', name: 'LSD', category: 'alucinogenos', aliases: 'ácido alucinógenos' },
+  { id: 'psilocibina', name: 'Psilocibina', category: 'alucinogenos', aliases: 'cogumelos alucinógenos' },
 ]
 
 const storageKey = 'recomeco:preview:v1'
-export const empty: Data = { tracks: [], entries: [], notes: [] }
+export const empty: Data = { tracks: [], entries: [], notes: [], favorites: [] }
 export const normalize = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
 
 export function dateKey(date = new Date()) {
@@ -72,7 +86,8 @@ export function readData(): Data {
     const raw = localStorage.getItem(storageKey)
     if (!raw) return empty
     const data = JSON.parse(raw)
-    return Array.isArray(data.tracks) && Array.isArray(data.entries) && Array.isArray(data.notes) ? data : empty
+    if (!Array.isArray(data.tracks) || !Array.isArray(data.entries) || !Array.isArray(data.notes)) return empty
+    return { ...empty, ...data, favorites: Array.isArray(data.favorites) ? data.favorites : [] }
   } catch {
     return empty
   }
@@ -89,10 +104,10 @@ export function clearData() {
 export const milestones = [7, 30, 90]
 
 export const reflections = [
-  { theme: 'Superação', text: 'Um dia difícil não apaga o caminho que você já percorreu.' },
-  { theme: 'Família', text: 'Quem acompanha um recomeço também precisa encontrar um lugar onde possa ser ouvido.' },
-  { theme: 'Limites', text: 'Você pode cuidar de alguém e ainda reservar tempo para cuidar de si.' },
-  { theme: 'Diálogo', text: 'Perguntar como a pessoa está e escutar a resposta já é uma forma de estar presente.' },
-  { theme: 'Acolhimento', text: 'Quando não souber por onde começar, pense em uma pessoa com quem você pode conversar.' },
-  { theme: 'Fé', text: 'Há tempo de chorar e tempo de rir, tempo de prantear e tempo de dançar.', source: 'Eclesiastes 3:4' },
+  { id: 'familia', theme: 'Família', text: 'A dor da família muitas vezes é invisível. Ela se expressa na preocupação, no medo, na saudade de ver quem amamos bem novamente.' },
+  { id: 'limites', theme: 'Codependência', text: 'Codependência não é culpa. Cuidar de quem amamos também exige limites, equilíbrio e autocuidado.' },
+  { id: 'superacao', theme: 'Superação', text: 'Um dia difícil não apaga o caminho que você já percorreu.' },
+  { id: 'dialogo', theme: 'Diálogo', text: 'O diálogo e a aceitação abrem caminhos para a confiança, o apoio e a reconstrução dos laços familiares.' },
+  { id: 'apoio', theme: 'Acolhimento', text: 'Você não está sozinho. Há ajuda, tratamento e pessoas que se importam com a sua recuperação.' },
+  { id: 'fe', theme: 'Bíblicas', text: 'Tudo posso naquele que me fortalece.', source: 'Filipenses 4:13' },
 ]

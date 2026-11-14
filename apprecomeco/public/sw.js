@@ -2,6 +2,7 @@ const scope = self.registration.scope
 const entry = new URL('./', scope).href
 const cachePrefix = `recomeco-app:${scope}:`
 const cacheName = `${cachePrefix}__BUILD_VERSION__`
+const artwork = [] /* ARTE_OFFLINE */
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -18,8 +19,7 @@ self.addEventListener('install', (event) => {
         .filter((asset) => asset.startsWith(new URL('./assets/', entry).href))
     }))
     await cache.addAll([...new Set([...bundles, ...styles.flat(), ...[
-      'icone.svg', 'icone-192.png', 'icone-512.png', 'manifest.webmanifest', 'arte/nascer-do-sol.png',
-      'arte/marca.png', 'arte/bebidas.png', 'arte/cannabis.png', 'arte/tabaco.png', 'arte/medicamentos.png', 'arte/outras.png',
+      'icone.svg', 'icone-192.png', 'icone-512.png', 'manifest.webmanifest', ...artwork,
     ].map((path) => new URL(path, entry).href)])])
     await cache.put(entry, page)
   })())
@@ -42,6 +42,9 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith((async () => {
     const cache = await caches.open(cacheName)
-    return (await cache.match(request)) || fetch(request)
+    if (request.destination === 'script' || request.destination === 'style' || request.destination === 'font') {
+      return (await cache.match(request)) || fetch(request)
+    }
+    return fetch(request).catch(async () => (await cache.match(request)) || Response.error())
   })())
 })
