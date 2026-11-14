@@ -8,14 +8,23 @@ const formats = [
   { name: 'Reels', image: 'capa-reels', text: 'Vídeos curtos, verticais e dinâmicos para informar, inspirar e apoiar a recuperação.' },
   { name: 'Stories', image: 'capa-stories', text: 'Atualizações do dia a dia e bastidores de pessoas e instituições cadastradas no app.' },
 ] as const
-const day = 86_400_000
-
-export function Social({ data, save, notify }: { data: Community; save: SaveCommunity; notify: (message: string) => void }) {
+export function Social({ data, activePosts, postId, save, notify }: {
+  data: Community; activePosts: Post[]; postId: string; save: SaveCommunity; notify: (message: string) => void
+}) {
   const [section, setSection] = useState<Post['kind'] | ''>('')
   const [upload, setUpload] = useState(false)
   const [busy, setBusy] = useState(false)
   const [remove, setRemove] = useState<Post | null>(null)
-  const visible = data.posts.filter((post) => post.kind === section && (post.kind === 'Reels' || Date.now() - post.created < day)).sort((a, b) => b.created - a.created)
+  if (postId) {
+    const post = activePosts.find((item) => item.id === postId)
+    return <>
+      <Heading title={post ? post.title : 'Publicação indisponível'}>{post && (post.kind === 'Reels' ? 'Reel' : 'Story')}</Heading>
+      {post ? <article className="panel surface"><PostMedia key={post.id} id={post.id} /></article> :
+        <p className="panel surface">A publicação foi removida ou o Story expirou.</p>}
+      <a className="button soft full" href="#comunidade">Ver Reels e Stories</a>
+    </>
+  }
+  const visible = activePosts.filter((post) => post.kind === section)
   return <><Heading title="Reels & Stories">Histórias, informações e inspirações da comunidade Recomeço.</Heading>
     <div className="two-grid">{formats.map((format) => <button className="panel social-card" key={format.name} aria-pressed={section === format.name} onClick={() => setSection(format.name)}>
       <h2>{format.name === 'Reels' ? <CirclePlay size={22} /> : <span className="story-ring" />}{format.name}</h2><p>{format.text}</p><img src={art(format.image)} alt="" />
@@ -23,7 +32,7 @@ export function Social({ data, save, notify }: { data: Community; save: SaveComm
     <div className="message-panel lavender"><Eye size={25} /><p>O perfil exibe a contagem de visualizações sem revelar a identidade de quem visitou. A contagem real depende da comunidade conectada.</p></div>
     {section && <section className="stack">
       <div className="split-title"><h2>{section}</h2><button className="button primary" onClick={() => setUpload(true)}><Plus size={18} /> Adicionar {section === 'Reels' ? 'Reel' : 'Story'}</button></div>
-      {visible.length ? visible.map((post) => <article key={post.id} className="panel surface"><div className="split-title"><h3>{post.title}</h3><button className="bare-icon danger-text" aria-label={`Remover ${post.title}`} onClick={() => setRemove(post)}><Trash2 size={20} /></button></div><PostMedia id={post.id} /></article>) : <p className="panel surface">Nenhum conteúdo local para exibir.</p>}
+      {visible.length ? visible.map((post) => <article key={post.id} className="panel surface"><div className="split-title"><h3><a href={`#comunidade/${encodeURIComponent(post.id)}`}>{post.title}</a></h3><button className="bare-icon danger-text" aria-label={`Remover ${post.title}`} onClick={() => setRemove(post)}><Trash2 size={20} /></button></div><PostMedia id={post.id} /></article>) : <p className="panel surface">Nenhum conteúdo local para exibir.</p>}
     </section>}
     {upload && <Modal title={section === 'Reels' ? 'Adicionar Reel' : 'Adicionar Story'} close={() => { if (!busy) setUpload(false) }}>
       <Callout>O conteúdo fica somente neste navegador. Escolha uma mídia de teste.</Callout>

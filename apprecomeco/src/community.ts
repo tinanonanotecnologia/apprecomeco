@@ -18,6 +18,7 @@ export type Professional = { id: string; name: string; specialty: string; regist
 export type Review = { clinicId: string; stars: number; comment: string; liked: boolean }
 export type FamilyLink = { id: string; clinicId: string; patient: string; family: string; contact: string; since: string; frequency: number; mood: string; progress: string; visit: string; authorized: boolean }
 export type Post = { id: string; kind: 'Reels' | 'Stories'; title: string; created: number }
+export const storyLifetime = 86_400_000
 export type Community = {
   clinics: Clinic[]; reviews: Review[]; saved: string[]; groups: Group[]; professionals: Professional[]
   catalog: Substance[]; requests: string[]; links: FamilyLink[]; posts: Post[]
@@ -38,12 +39,28 @@ export const initialCommunity: Community = {
   posts: [], message: '', messageDate: '', name: '', sampleFamily: false,
 }
 const key = 'recomeco:comunidade:v1'
+const viewedPostsKey = 'recomeco:publicacoes-vistas:v1'
+
+export function readViewedPosts(): string[] {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(viewedPostsKey) || '[]')
+    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []
+  } catch { return [] }
+}
+
+export function writeViewedPosts(ids: string[]) {
+  localStorage.setItem(viewedPostsKey, JSON.stringify(ids))
+}
+
 export function readCommunity(): Community {
   try { return { ...initialCommunity, ...JSON.parse(localStorage.getItem(key) || '{}') } }
   catch { return initialCommunity }
 }
 export function writeCommunity(data: Community) { localStorage.setItem(key, JSON.stringify(data)) }
-export function resetCommunity() { localStorage.removeItem(key) }
+export function resetCommunity() {
+  localStorage.removeItem(key)
+  localStorage.removeItem(viewedPostsKey)
+}
 export type SaveCommunity = (next: Community, message: string) => boolean
 
 function openMedia(): Promise<IDBDatabase> {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ArrowDownToLine, BookOpen, Building2, ChartNoAxesColumnIncreasing, ChevronLeft, CircleUserRound,
+  ArrowDownToLine, Bell, BookOpen, Building2, ChartNoAxesColumnIncreasing, ChevronLeft, CirclePlay, CircleUserRound,
   Clapperboard, HeartHandshake, History, House, LockKeyhole, Menu, ShieldCheck, Trophy, Users, X,
 } from 'lucide-react'
 import { Achievements, Diary, HistoryPage, Home, Library, Record, RegisterCatalog, TrackForm } from './Personal'
@@ -8,8 +8,8 @@ import { Groups, Professionals, Support } from './Support'
 import { ClinicPortal, ClinicProfile, ClinicRegistration, Clinics, ClinicReview, ClinicStatistics, FamilyPortal } from './Clinics'
 import { Admin } from './Admin'
 import { Social } from './Social'
-import { art, Callout, Heading, Modal } from './ui'
-import { clearMedia, initialCommunity, readCommunity, resetCommunity, writeCommunity } from './community'
+import { art, Callout, Heading, LinkRow, Modal } from './ui'
+import { clearMedia, initialCommunity, readCommunity, readViewedPosts, resetCommunity, storyLifetime, writeCommunity, writeViewedPosts } from './community'
 import type { SaveCommunity } from './community'
 import { clearData, dateKey, empty, normalize, persist, readData } from './model'
 import type { Category, Substance } from './model'
@@ -59,11 +59,22 @@ export default function App() {
   const [add, setAdd] = useState<Add | null>(null)
   const [clear, setClear] = useState(false)
   const [drawer, setDrawer] = useState(false)
+  const [notifications, setNotifications] = useState(false)
+  const [viewedPosts, setViewedPosts] = useState(readViewedPosts)
+  const [, refreshPosts] = useState(0)
   const [notice, setNotice] = useState('')
   const [install, setInstall] = useState<InstallPrompt | null>(null)
   const main = useRef<HTMLElement>(null)
   const today = dateKey()
   const { page, id, extra } = route
+  const now = Date.now()
+  const activePosts = community.posts.filter((post) => post.kind === 'Reels' || post.created + storyLifetime > now)
+    .sort((a, b) => b.created - a.created)
+  const nextStoryExpiry = activePosts.filter((post) => post.kind === 'Stories').at(-1)?.created
+  const viewed = new Set(viewedPosts)
+  const unread = activePosts.filter((post) => !viewed.has(post.id)).length
+  const openedPost = page === 'comunidade' && activePosts.find((post) => post.id === id)
+  const unreadPostId = openedPost && !viewed.has(openedPost.id) ? openedPost.id : ''
   const selectedClinic = community.clinics.find((item) => item.approved && item.id === id)
   const selectedTrack = data.tracks.find((item) => item.substance.id === id)
   const requested = page === 'registrar' && id && id !== 'outras' && community.catalog.find((item) => item.id === id)
@@ -73,11 +84,12 @@ export default function App() {
     function navigate() {
       setRoute(getRoute())
       setDrawer(false)
+      setNotifications(false)
       setAdd(null)
       window.scrollTo(0, 0)
       main.current?.focus({ preventScroll: true })
     }
-    function sync() { setData(readData()); setCommunity(readCommunity()) }
+    function sync() { setData(readData()); setCommunity(readCommunity()); setViewedPosts(readViewedPosts()) }
     function onInstall(event: Event) { event.preventDefault(); setInstall(event as InstallPrompt) }
     function onInstalled() { setInstall(null) }
     window.addEventListener('hashchange', navigate)
@@ -91,6 +103,21 @@ export default function App() {
       window.removeEventListener('appinstalled', onInstalled)
     }
   }, [])
+
+  useEffect(() => {
+    if (nextStoryExpiry === undefined) return
+    const delay = Math.max(1, nextStoryExpiry + storyLifetime - Date.now() + 1)
+    const timeout = window.setTimeout(() => refreshPosts((value) => value + 1), delay)
+    return () => window.clearTimeout(timeout)
+  }, [nextStoryExpiry])
+
+  useEffect(() => {
+    if (!unreadPostId) return
+    const updated = [...new Set([...readViewedPosts(), unreadPostId])]
+    setViewedPosts((previous) => [...new Set([...previous, ...updated])])
+    try { writeViewedPosts(updated) }
+    catch { /* Keep the notification read for this session if storage is unavailable. */ }
+  }, [unreadPostId])
 
   useEffect(() => {
     if (!notice) return
@@ -126,6 +153,7 @@ export default function App() {
   }
   function goBack() {
     if (page === 'admin' && id) { location.hash = 'admin'; return }
+    if (page === 'comunidade' && id) { location.hash = 'comunidade'; return }
     if (selectedClinic && ['estatisticas-clinica', 'avaliar-clinica'].includes(page)) { location.hash = `clinica/${selectedClinic.id}`; return }
     location.hash = parents[page] || 'inicio'
   }
@@ -143,10 +171,18 @@ export default function App() {
     <div className="app-layout">
       <aside className="desktop-menu panel"><a href="#inicio" className="brand"><img src={art('marca')} alt="" /><span>Recomeço</span></a><nav aria-label="Mais opções">{appMenu}</nav>{installButton}</aside>
       <div className="app-surface">
-        <header className="app-header">
+        <header className={`app-header${page === 'inicio' ? ' home-header' : ''}`}>
           <button className="bare-icon" aria-label={page === 'inicio' ? 'Abrir menu' : 'Voltar'} onClick={() => page === 'inicio' ? setDrawer(true) : goBack()}>{page === 'inicio' ? <Menu size={24} /> : <ChevronLeft size={26} />}</button>
           <a href="#inicio" className="brand"><img src={art('marca')} alt="" /><span>Recomeço</span></a>
-          {page === 'inicio' ? <a className="bare-icon profile-button" aria-label="Meu perfil" href="#perfil"><CircleUserRound size={25} /></a> : <button className="bare-icon" aria-label="Abrir menu" onClick={() => setDrawer(true)}><Menu size={22} /></button>}
+          {page === 'inicio' ? <div className="header-actions">
+            <button type="button" className="bare-icon notification-button" aria-haspopup="dialog"
+              aria-label={unread ? `Notificações, ${unread} ${unread === 1 ? 'nova' : 'novas'}` : 'Notificações'}
+              onClick={() => setNotifications(true)}>
+              <Bell size={22} />
+              {unread > 0 && <span className="notification-count" aria-hidden="true">{unread > 99 ? '99+' : unread}</span>}
+            </button>
+            <a className="bare-icon profile-button" aria-label="Meu perfil" href="#perfil"><CircleUserRound size={25} /></a>
+          </div> : <button className="bare-icon" aria-label="Abrir menu" onClick={() => setDrawer(true)}><Menu size={22} /></button>}
         </header>
         <main ref={main} id="conteudo" tabIndex={-1}>
           {page === 'inicio' && <Home data={data} catalog={community.catalog} today={today} message={message} add={() => setAdd({})} />}
@@ -176,7 +212,7 @@ export default function App() {
           {page === 'cadastro-clinica' && <ClinicRegistration data={community} save={saveCommunity} />}
           {page === 'portal-clinica' && <ClinicPortal data={community} save={saveCommunity} />}
           {page === 'familia' && <FamilyPortal data={community} save={saveCommunity} />}
-          {page === 'comunidade' && <Social data={community} save={saveCommunity} notify={setNotice} />}
+          {page === 'comunidade' && <Social data={community} activePosts={activePosts} postId={id} save={saveCommunity} notify={setNotice} />}
           {page === 'admin' && <Admin section={id} data={community} personal={data} save={saveCommunity} />}
           {page === 'perfil' && <><Heading title="Meu Perfil" /><Callout>Perfil de demonstração. Use um nome fictício.</Callout><form className="panel surface form" onSubmit={(event) => {
             event.preventDefault()
@@ -189,6 +225,18 @@ export default function App() {
         <nav className="tab-bar" aria-label="Menu principal">{tabs.map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={active === id ? 'page' : undefined}><Icon size={23} /><span>{label}</span></a>)}</nav>
       </div>
     </div>
+    {notifications && <Modal title="Notificações" close={() => setNotifications(false)}>
+      {activePosts.length ? <ul className="stack notification-list">{activePosts.map((post) => {
+        const isNew = !viewed.has(post.id)
+        const kind = post.kind === 'Reels' ? 'Reel' : 'Story'
+        return <li key={post.id}>
+          <LinkRow href={`#comunidade/${encodeURIComponent(post.id)}`} icon={kind === 'Reel' ? <CirclePlay size={23} /> : <span className="story-ring" />}>
+            <small>{isNew ? 'Novo ' : ''}{kind}</small>
+            <strong>{post.title}</strong>
+          </LinkRow>
+        </li>
+      })}</ul> : <p className="panel surface">Você ainda não tem notificações de Reels ou Stories.</p>}
+    </Modal>}
     {drawer && <Modal title="Menu do Recomeço" close={() => setDrawer(false)}><nav className="drawer-nav" aria-label="Mais opções">{appMenu}</nav>{installButton}</Modal>}
     {add && <Modal title="Adicionar substância" close={closeAdd}><TrackForm choices={community.catalog} substance={add.substance} category={add.category} today={today} submit={(track) => {
       if (data.tracks.some((item) => item.substance.id === track.substance.id || normalize(item.substance.name) === normalize(track.substance.name))) return 'Você já acompanha esta substância.'
@@ -198,7 +246,7 @@ export default function App() {
       <button className="button soft" onClick={() => setClear(false)}>Cancelar</button><button className="button danger" onClick={async () => {
         try {
           await clearMedia(); clearData(); resetCommunity(); sessionStorage.removeItem('recomeco:admin-demo')
-          setData(empty); setCommunity(initialCommunity); setClear(false); setNotice('Dados apagados deste navegador.')
+          setData(empty); setCommunity(initialCommunity); setViewedPosts([]); setClear(false); setNotice('Dados apagados deste navegador.')
         } catch { setNotice('Não foi possível limpar os dados deste navegador.') }
       }}><X size={17} /> Apagar dados</button></div></Modal>}
     <div className="notice" role="status">{notice && <span>{notice}</span>}</div>
